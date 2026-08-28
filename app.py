@@ -41,7 +41,7 @@ def lire_stations():
 @app.get("/sante")
 def sante():
     """Route destinee aux machines, pas aux humains."""
-    return jsonify({"statut": "ok", "version": "1.0"})
+    return jsonify({"statut": "ok", "version": os.environ.get("VERSION", "1.0")})
 
 
 @app.get("/stations")
@@ -61,14 +61,14 @@ def disponibilite():
     return jsonify({"source": source, "taux_occupation": taux})
 
 
-# ---------------------------------------------------------------------------
-# A TOI DE JOUER (jalon 3 de l'enonce)
-#
-# Ajoute ici une route /alertes qui renvoie les stations dont le nombre de
-# velos disponibles est inferieur ou egal a 2 (le seuil d'alerte).
-# Respecte la forme des reponses ci-dessus : le champ "source" doit y figurer.
-# Puis ecris le test correspondant (jalon 4).
-# ---------------------------------------------------------------------------
+SEUIL_ALERTE = 2
+
+
+@app.get("/alertes")
+def alertes():
+    donnees, source = lire_stations()
+    en_alerte = [s for s in donnees if s["velos_disponibles"] <= SEUIL_ALERTE]
+    return jsonify({"source": source, "alertes": en_alerte})
 
 
 if __name__ == "__main__":

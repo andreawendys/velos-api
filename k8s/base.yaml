@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velos-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: velos-db
+  template:
+    metadata:
+      labels:
+        app: velos-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: velos
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: velos-secret
+                  key: postgres_password
+          volumeMounts:
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-d", "velos"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: init
+          configMap:
+            name: velos-init
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: velos-db
+spec:
+  type: ClusterIP
+  selector:
+    app: velos-db
+  ports:
+    - port: 5432
+      targetPort: 5432

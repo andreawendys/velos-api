@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    image: velos-api:1.0
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:motdepasse@db:5432/velos
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: motdepasse
+      POSTGRES_DB: velos
+    volumes:
+      - donnees-velos-pg:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d velos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  donnees-velos-pg:

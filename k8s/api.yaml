@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: velos-api
+  labels:
+    app: velos-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: velos-api
+  template:
+    metadata:
+      labels:
+        app: velos-api
+    spec:
+      containers:
+        - name: api
+          image: andreawendys/velos-api:2.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: VERSION
+              value: "2.0"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: velos-secret
+                  key: database_url
+          readinessProbe:
+            httpGet:
+              path: /sante
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /sante
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: velos-api
+spec:
+  type: NodePort
+  selector:
+    app: velos-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30081
